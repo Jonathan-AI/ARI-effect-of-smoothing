@@ -1,0 +1,1 @@
+# ARI-effect-of-smoothing
