@@ -1,9 +1,9 @@
 
 ## Version that is optimal in terms of largest area found by clusters 
 
-library(devtools)
-devtools::install_github("wdweeda/ARIBrain")
-library(ARIBrain)
+#library(devtools)
+#devtools::install_github("wdweeda/ARIBrain")
+#library(ARIBrain)
 
 opt_fwhm = function(zstats, min_fwhm = 2, max_fwhm = 12, tdp, max_size = T){
   
