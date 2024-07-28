@@ -1,0 +1,539 @@
+---
+title: "Thesis_Sim_TDP"
+output: html_document
+date: "2024-06-01"
+---
+
+# Data Import
+
+```{r}
+library(aws)
+library(ARIbrain)
+library(scatterplot3d)
+library(TCIU)
+library(RNifti)
+library(ggplot2)
+library(ggthemes)
+```
+
+```{r}
+zstat = readNifti("zstat1.nii.gz")
+```
+
+## Creating the 4MM, 6MM, 8MM & 10MM Tmat
+
+```{r}
+id_list = c("01077","01241","01261", "01679", "02036"
+            , "05081", "06307", "07552", "07876", "07946", 10958,
+            12060, 12126, 12152, 12379, 14473, 14725, 15128
+            , 15422, 15497, 16378, 18356, 19159, 19971, 20495
+            , 20926, 21499, 21502, 22180, 23392, 24781, 25331, 26554, 27274, 27392, 29793, 31444, 32052, 32596, 33176, 35020, 35232, 35967, 39346, 39460, 40619, 41433, 41724
+            , 41731, 42178, 43055, 43803, 45566, 46973, 47094, 49227, 
+            50637, 51387, 57150, 
+            58867, 62124, 63516
+            , 65041, 65461, 66467
+            , 68752, 69925, 72000
+            , 72795, 73221, 73709
+            , 73853, 74276, 74941
+            , 75293, 75361, 75620,
+            76935, 77629, 78282
+            , 78327, 78648, 79784
+            , 84631, 85532, 86362
+            , 86410, 86559, 89213
+            , 90623, 91105, 91222
+            , 91232, 94314, 95854
+            , 96080, 96197, 98146
+            , 98207, 98439, 98661
+            , 98739, 99718)
+```
+
+```{r, warning = F}
+setwd("~/Downloads/Oulu")
+eklund_noise_creator = function(smoothing_level) {
+  tmat = (array(0, dim = c(91,109,91,103)))
+for (i in 1:103){
+  tmat[,,,i] = readNifti(gsub(" ","", paste("Oulu_sub",as.character(id_list[i]),"_Event1_smoothing_", smoothing_level, "mm_cope.nii.gz", sep = "")))[]
+}
+  return(tmat)
+}
+```
+
+```{r}
+setwd("~/Downloads/Oulu")
+tmat_4mm = eklund_noise_creator(4)
+tmat_6mm = eklund_noise_creator(6)
+tmat_8mm = eklund_noise_creator(8)
+tmat_10mm = eklund_noise_creator(10)
+```
+
+## Sampling function (30 individuals)
+
+Sampling function for TDP;
+
+```{r}
+set.seed(123)
+tdp_calc_sampler = function(kernel_size, snr, noise_ksize_mat, type_zstat){
+  
+  # Sampling 30 individuals from a list of 103 people
+  
+  sample_ids = sample(1:103, 30, replace = F)
+  tmat_sub = noise_ksize_mat[,,,sample_ids]
+    
+  # Transforming from Beta to T-values
+  
+  mean_mat = apply(tmat_sub, c(1,2,3), mean)
+  se_mat = apply(tmat_sub, c(1,2,3), sd) / sqrt(30)
+  t_mat = mean_mat / se_mat
+  mask_mat = apply(tmat_sub, c(1,2,3), any)
+  cluster_mask = type_zstat[] > 3.1
+  
+  # Set seed for reproducibility and define empty array
+  
+  #set.seed(123)  
+  signal = (snr * sd(t_mat, na.rm = T)) * sqrt(30)
+  empty_arr <- array(0, dim = dim(tmat_sub)[1:3])
+  empty_arr[cluster_mask] <- rnorm(sum(cluster_mask), signal) 
+  
+  # Smoothing the signal and adding to the regular data file
+  
+  #sm_arr = GaussSmoothArray(empty_arr, ksize = kernel_size, var.norm = F)
+  sm_arr = attr(kernsm(empty_arr, h = kernel_size, unit = "FWHM")[], "yhat")
+  new_mat = t_mat + sm_arr
+  p_mat = (1 - pnorm(abs(new_mat)))*2
+  
+  fx = function(p_mat){
+    return(mean(p.adjust(hommel(p_mat[is.na(p_mat) == F])) < 0.05))
+  }
+  
+  suppressErrorsWithTry <- function(f, p_mat) {
+  result <- try(f(p_mat), silent = TRUE)
+  if (inherits(result, "try-error")) {
+    return(0)
+  } else {
+    return(result)
+  }
+  }
+  suppressErrorsWithTry(fx, p_mat)
+
+}
+```
+
+Sampling function for number of clusters, size of clusters & TDP of detected clusters;
+
+```{r}
+set.seed(123)
+clust_ret_calc_sampler = function(kernel_size, snr, min_tdp, noise_ksize_mat, type_zstat){
+  
+  # Sampling 30 individuals from a list of 103 people
+  
+  # Sampling 30 individuals from a list of 103 people
+  
+  sample_ids = sample(1:103, 30, replace = F)
+  tmat_sub = noise_ksize_mat[,,,sample_ids]
+    
+  # Transforming from Beta to T-values
+  
+  mean_mat = apply(tmat_sub, c(1,2,3), mean)
+  se_mat = apply(tmat_sub, c(1,2,3), sd) / sqrt(30)
+  t_mat = mean_mat / se_mat
+  mask_mat = apply(tmat_sub, c(1,2,3), any)
+  cluster_mask = type_zstat[] > 3.1
+  
+  # Set seed for reproducibility and define empty array
+  
+  #set.seed(123)  
+  signal = (snr * sd(t_mat, na.rm = T)) * sqrt(30)
+  empty_arr <- array(0, dim = dim(tmat_sub)[1:3])
+  empty_arr[cluster_mask] <- rnorm(sum(cluster_mask), signal) 
+  
+  # Smoothing the signal and adding to the regular data file
+  
+  #sm_arr = GaussSmoothArray(empty_arr, ksize = kernel_size, var.norm = F)
+  sm_arr = attr(kernsm(empty_arr, h = kernel_size, unit = "FWHM")[], "yhat")
+  new_mat = t_mat + sm_arr
+  p_mat = (1 - pnorm(abs(new_mat)))*2
+  
+  fx = function(p_mat, mask_mat, tdp = min_tdp){
+    tdp = 0.7
+    ari = ARIBrainCluster(p_mat, mask_mat)
+    tdpsmclusters = TDPQuery(ari, min_tdp)
+    sm = as.data.frame(summary(tdpsmclusters))
+    #im = array(0, dim = dim(p_mat))
+    #im[ari@indexp[unlist(tdpsmclusters@clusterlist) + 1]] = 1
+    calc = matrix(NA, nrow = 1, ncol = 3)
+    calc[1, 1] = sum(sm$`TDN(lower)`) / sum(sm$Size)
+    calc[1, 2] = sum(sm$Size) / length(p_mat[mask_mat])
+    calc[1, 3] = nrow(sm)
+    return(calc)
+  }
+  suppressErrorsWithTry <- function(f, p_mat, mask_mat, min_tdp) {
+  result <- try(f(p_mat, mask_mat, min_tdp), silent = TRUE)
+  if (inherits(result, "try-error")) {
+    return(0)
+  } else {
+    return(result)
+  }
+  }
+  min_tdp = 0.7
+  suppressErrorsWithTry(fx, p_mat, mask_mat, min_tdp)
+
+}
+```
+
+Sampling function for prop. of original cluster;
+
+```{r}
+
+cluster_size_ret_calc = function(kernel_size, signal, min_tdp) {
+  
+# Introducing the signal in the original clusters format
+  
+cluster_mask = zstat[] > 3.1
+
+radius = 10
+set.seed(123)  # Set seed for reproducibility
+empty_arr <- array(0, dim = dim(tmat)[1:3])
+empty_arr[cluster_mask] <- rnorm(sum(cluster_mask), signal) 
+
+# Smoothing the signal and adding to the regular data file
+
+sm_arr = GaussSmoothArray(empty_arr, ksize = kernel_size, var.norm = F)
+new_mat = t_mat + sm_arr
+p_mat = (1 - pnorm(abs(new_mat)))*2
+
+# Cluster formation
+
+arismcluster = ARIBrainCluster(Pmap = p_mat, mask = mask_mat)
+tdpsmclusters = TDPQuery(arismcluster, min_tdp)
+
+#pvalssm_df = data.frame(pvals = c(p_mat), index = seq(1, dim(p_mat)[1]*dim(p_mat)[2]*dim(p_mat)[3]), cluster = 0)
+
+#for (i in 1:length(summary(tdpsmclusters)[,'Size'])){
+#  for (j in arismcluster@indexp[tdpsmclusters@clusterlist[[i]] + 1])
+#    pvalssm_df$cluster[j] = 1
+#}
+
+#im = array(pvalssm_df$cluster, dim = dim(p_mat))
+
+#return(mean(im[cluster_mask]))
+
+im = array(0, dim = dim(p_mat))
+im[arismcluster@indexp[unlist(tdpsmclusters@clusterlist) + 1]] = 1
+return(mean(im[cluster_mask]))
+
+}
+```
+## Simulation study
+
+### 4MM level & snr = 1
+
+```{r, warning = F}
+vals_4mm_1 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_1[i] = tdp_calc_sampler(2, 1, tmat_4mm, zstat)
+}
+
+```
+
+### 6MM level & snr = 1
+
+```{r, warning = F}
+vals_6mm_1 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_1[i] = tdp_calc_sampler(3, 1, tmat_6mm, zstat)
+}
+
+```
+
+### 8MM level & snr = 1
+
+```{r, warning = F}
+vals_8mm_1 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_1[i] = tdp_calc_sampler(4, 1, tmat_8mm, zstat)
+}
+
+```
+
+### 10MM level & snr = 1
+
+```{r, warning = F}
+vals_10mm_1 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_1[i] = tdp_calc_sampler(5, 1, tmat_10mm, zstat)
+}
+
+```
+
+### 4MM level & snr = 2
+
+```{r, warning = F}
+vals_4mm_2 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_2[i] = tdp_calc_sampler(2, 2, tmat_4mm, zstat)
+}
+
+```
+
+### 6MM level & snr = 2
+
+```{r, warning = F}
+vals_6mm_2 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_2[i] = tdp_calc_sampler(3, 2, tmat_6mm, zstat)
+}
+
+```
+
+### 8MM level & snr = 2
+
+```{r, warning = F}
+vals_8mm_2 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_2[i] = tdp_calc_sampler(4, 2, tmat_8mm, zstat)
+}
+
+```
+
+### 10MM level & snr = 2
+
+```{r, warning = F}
+vals_10mm_2 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_2[i] = tdp_calc_sampler(5, 2, tmat_10mm, zstat)
+}
+
+```
+
+### 4MM level & snr = 0.2
+
+```{r, warning = F}
+vals_4mm_02 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_02[i] = tdp_calc_sampler(2, 0.2, tmat_4mm, zstat)
+}
+
+```
+
+### 6MM level & snr = 0.4
+
+```{r, warning = F}
+vals_6mm_02 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_02[i] = tdp_calc_sampler(3, 0.2, tmat_6mm, zstat)
+}
+
+```
+
+```{r}
+vals_8mm_02
+```
+
+
+### 8MM level & snr = 0.2
+
+```{r, warning = F}
+vals_8mm_02 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_02[i] = tdp_calc_sampler(4, 0.2, tmat_8mm, zstat)
+}
+
+```
+
+### 10MM level & snr = 0.2
+
+```{r, warning = F}
+vals_10mm_02 = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_02[i] = tdp_calc_sampler(5, 0.2, tmat_10mm, zstat)
+}
+
+```
+
+## 4MM level & flanker & snr = 1
+
+```{r}
+flanker = readNifti("flanker_zstat.nii.gz")
+```
+
+```{r, warning = F}
+vals_4mm_1f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_1f[i] = tdp_calc_sampler(2, 1, tmat_4mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_6mm_1f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_1f[i] = tdp_calc_sampler(3, 1, tmat_6mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_8mm_1f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_1f[i] = tdp_calc_sampler(4, 1, tmat_8mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_10mm_1f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_1f[i] = tdp_calc_sampler(5, 1, tmat_10mm, flanker)
+}
+
+```
+
+### SNR = 2
+
+```{r, warning = F}
+vals_4mm_2f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_2f[i] = tdp_calc_sampler(2, 2, tmat_4mm, flanker)
+}
+
+```
+
+```{r}
+vals_8mm_2f
+```
+
+```{r, warning = F}
+vals_6mm_2f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_2f[i] = tdp_calc_sampler(3, 2, tmat_6mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_8mm_2f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_2f[i] = tdp_calc_sampler(4, 2, tmat_8mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_10mm_2f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_2f[i] = tdp_calc_sampler(5, 2, tmat_10mm, flanker)
+}
+
+```
+
+### SNR = 0.2
+
+```{r, warning = F}
+vals_4mm_02f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_4mm_02f[i] = tdp_calc_sampler(2, 0.2, tmat_4mm, flanker)
+}
+
+```
+
+
+```{r, warning = F}
+vals_6mm_02f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_6mm_02f[i] = tdp_calc_sampler(3, 0.2, tmat_6mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_8mm_02f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_8mm_02f[i] = tdp_calc_sampler(4, 0.2, tmat_8mm, flanker)
+}
+
+```
+
+```{r, warning = F}
+vals_10mm_02f = numeric(100)
+
+for (i in 1:100){
+  set.seed(sample(100000:200000,1))
+  vals_10mm_02f[i] = tdp_calc_sampler(5, 0.2, tmat_10mm, flanker)
+}
+
+```
+
+## Ecological validation
+
+```{r, warning = F}
+#length(list.files(path = "/Users/jonathanornstein/Downloads/results"))
+
+calc = matrix(NA, nrow = 1128, ncol = 2)
+for (i in 1:1100){
+  setwd("/Users/jonathanornstein/Downloads/results")
+  load(list.files(path = "/Users/jonathanornstein/Downloads/results")[i])
+  if (sum(abs(resultdata$rawdatainfo$statorig[]) > 30) == 0){
+  calc[i, 1] = sum(resultdata$aristat$ari_dframe_all$FalseNull) / sum(resultdata$rawdatainfo$statorig$data != 0)
+  calc[i, 2] = resultdata$smoothinfo$fwhm
+  }
+  else{
+    calc[i,1] = NA
+    calc[i,2] = NA
+  }
+}
+```
+
+
+```{r}
+calc2 = (calc[which(calc[,2] < 10),])
+```
+
+```{r}
+calc3 = (calc2[which(calc2[,1] != 0),])
+```
