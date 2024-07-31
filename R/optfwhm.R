@@ -18,7 +18,7 @@
 #' 
 #' @return Returns a value that can be used to define the optimal smoothing parameter.
 #' @author Jonathan Ornstein, Wouter Weeda.
-#' @import ARIBrain
+#'
 #' @export
 
 
