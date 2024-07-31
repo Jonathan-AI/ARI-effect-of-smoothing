@@ -6,6 +6,7 @@
 #' @param Z-stats 3D array of activation values, or a nifti file name.
 #' @param Minimum level of spatial smoothing a researcher wishes to set, default is 2.
 #' @param Maximum level of spatial smoothing a researcher wishes to set, default is 2.
+#' @param Minimum TDP threshold set to apply All-Resolutions Inference framework
 #' @param Optimization based on maximal size (True) or maximal number of clusters (False)
 #' @examples 
 #' 
