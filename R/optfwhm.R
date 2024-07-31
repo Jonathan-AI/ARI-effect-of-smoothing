@@ -10,7 +10,7 @@
 #' @param Optimization based on maximal size (True) or maximal number of clusters (False)
 #' @examples 
 #' 
-#' opt_fwh(zstat, min_fwhm = 2, max_fwhm = 12, tdp = 0.7, max_size = T)
+#' optfwhm(zstat, min_fwhm = 2, max_fwhm = 12, tdp = 0.7, max_size = T)
 #' 
 #' 
 #' 
