@@ -1,7 +1,7 @@
 #' @title Optimal smoothing parameter for All-resolutions inference cluster thresholding in neuroimaging (opt_fwhm)
-#' @name opt_fwhm
-#' @aliases opt_fwhm
-#' @description \code{opt_fwhm} is made to guide researchers in defining their optimal smoothing parameter
+#' @name optfwhm
+#' @aliases optfwhm
+#' @description \code{optfwhm} is made to guide researchers in defining their optimal smoothing parameter
 #' @usage opt_fwhm(zstat, min_fwhm, max_fwhm, tdp, max_size)
 #' @param Z-stats 3D array of activation values, or a nifti file name.
 #' @param Minimum level of spatial smoothing a researcher wishes to set, default is 2.
@@ -26,7 +26,7 @@
 #devtools::install_github("wdweeda/ARIBrain")
 #library(ARIBrain)
 
-opt_fwhm = function(zstats, min_fwhm = 2, max_fwhm = 12, tdp, max_size = T){
+optfwhm = function(zstats, min_fwhm = 2, max_fwhm = 12, tdp, max_size = T){
  
   cluster_calc = function(fwhm, tdp, zstats){
     
