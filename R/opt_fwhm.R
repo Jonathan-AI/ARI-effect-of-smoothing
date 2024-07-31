@@ -1,4 +1,4 @@
-@title Optimal smoothing parameter for All-resolutions inference cluster thresholding in neuroimaging (opt_fwhm)
+#' @title Optimal smoothing parameter for All-resolutions inference cluster thresholding in neuroimaging (opt_fwhm)
 #' @name opt_fwhm
 #' @aliases opt_fwhm
 #' @description \code{opt_fwhm} is made to guide researchers in defining their optimal smoothing parameter
