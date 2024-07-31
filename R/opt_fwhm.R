@@ -1,13 +1,32 @@
+@title Optimal smoothing parameter for All-resolutions inference cluster thresholding in neuroimaging (opt_fwhm)
+#' @name opt_fwhm
+#' @aliases opt_fwhm
+#' @description \code{opt_fwhm} is made to guide researchers in defining their optimal smoothing parameter
+#' @usage opt_fwhm(zstat, min_fwhm, max_fwhm, tdp, max_size)
+#' @param Z-stats 3D array of activation values, or a nifti file name.
+#' @param Minimum level of spatial smoothing a researcher wishes to set, default is 2.
+#' @param Maximum level of spatial smoothing a researcher wishes to set, default is 2.
+#' @param Optimization based on maximal size (True) or maximal number of clusters (False)
+#' @examples 
+#' 
+#' opt_fwh(zstat, min_fwhm = 2, max_fwhm = 12, tdp = 0.7, max_size = T)
+#' 
+#' 
+#' 
+#' 
+#' 
+#' @return Returns a value that can be used to define the optimal smoothing parameter.
+#' @author Jonathan Ornstein, Wouter Weeda.
+#' @import ARIBrain
+#' @export
 
-## Version that is optimal in terms of largest area found by clusters 
 
 #library(devtools)
 #devtools::install_github("wdweeda/ARIBrain")
 #library(ARIBrain)
 
 opt_fwhm = function(zstats, min_fwhm = 2, max_fwhm = 12, tdp, max_size = T){
-  
-  ### Calculating voxelsize??????
+ 
   cluster_calc = function(fwhm, tdp, zstats){
     
     sm_arr = attr(kernsm(zstats, h = fwhm, unit = "FWHM")[], "yhat")
