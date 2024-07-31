@@ -32,8 +32,5 @@ number of clusters that are found given a TDP threshold when applying the All-Re
 \examples{
 
 optfwhm(zstat, min_fwhm = 2, max_fwhm = 10, tdp = 0.7, max_size = T)
-
-
-ARI(Pmap = pvalue_name, clusters = cluster_name, mask = mask_name, Statmap = zstat_name)
     
 }
