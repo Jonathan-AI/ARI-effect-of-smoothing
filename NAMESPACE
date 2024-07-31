@@ -1,4 +1,3 @@
-useDynLib(ARISmooth, .registration=TRUE)
 exportPattern("^[[:alpha:]]+")
 
-export(opt_fwhm)
+export(optfwhm)
