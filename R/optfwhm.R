@@ -1,13 +1,10 @@
 #' @title Optimal smoothing parameter for All-resolutions inference cluster thresholding in neuroimaging (opt_fwhm)
-#' @name optfwhm
-#' @aliases optfwhm
-#' @description \code{optfwhm} is made to guide researchers in defining their optimal smoothing parameter
-#' @usage opt_fwhm(zstat, min_fwhm, max_fwhm, tdp, max_size)
-#' @param Z-stats 3D array of activation values, or a nifti file name.
-#' @param Minimum level of spatial smoothing a researcher wishes to set, default is 2.
-#' @param Maximum level of spatial smoothing a researcher wishes to set, default is 2.
-#' @param Minimum TDP threshold set to apply All-Resolutions Inference framework
-#' @param Optimization based on maximal size (True) or maximal number of clusters (False)
+#' @description The function is made to guide researchers in defining their optimal smoothing parameter
+#' @param zstat Z-stats 3D array of activation values, or a nifti file name.
+#' @param min_fwhm Minimum level of spatial smoothing a researcher wishes to set, default is 2.
+#' @param max_fwhm Maximum level of spatial smoothing a researcher wishes to set, default is 2.
+#' @param tdp Minimum TDP threshold set to apply All-Resolutions Inference framework
+#' @param max_size Optimization based on maximal size (True) or maximal number of clusters (False)
 #' @examples 
 #' 
 #' optfwhm(zstat, min_fwhm = 2, max_fwhm = 12, tdp = 0.7, max_size = T)
